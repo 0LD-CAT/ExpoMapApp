@@ -8,7 +8,7 @@
 
 2. Перейдите в директорию проекта:
    ```bash
-   cd .\MapApp\
+   cd .\ExpoMapApp\
    ```
 
 3. Install dependencies
