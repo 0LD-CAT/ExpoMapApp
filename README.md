@@ -11,12 +11,12 @@
    cd .\MapApp\
    ```
 
-3. Install dependencies
+3. Установите зависимости.
    ```bash
    npm install
    ```
 
-4. Start the app
+4. Запустите приложение.
    ```bash
    npx expo start
    ```
