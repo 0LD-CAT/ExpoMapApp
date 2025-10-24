@@ -2,72 +2,43 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CustomMarker } from '../types';
-
 import Map from '../components/Map';
 
+import { useMarkers } from '../contexts/MarkerContext';
+
+import { CustomMarker } from '../types';
 
 export default function App() {
-    const [markers, setMarkers] = useState<CustomMarker[]>([]);
+    const { markers, addMarker, deleteMarker } = useMarkers();
     const [mapError, setMapError] = useState<string | null>(null);
     const router = useRouter();
-
-    // Добавление маркера на карту
-    const handleAddMarker = async (marker: CustomMarker) => {
-        try {
-            setMarkers(prevMarkers => [...prevMarkers, marker]);
-            console.log("Дабавлен маркер:", marker)
-        }
-        catch (error) {
-        console.error('Ошибка при добавлении маркера:', error);
-        }
-    };
-
-    // Удаление маркера с карты
-    const handleDeleteMarker = async (marker: CustomMarker) => {
-        try {
-            setMarkers((prev) => prev.filter((m) => m.id !== marker.id));
-            console.log("Удалён маркер:", marker)
-        }
-        catch (error) {
-        console.error('Ошибка при удалении маркера:', error);
-        }
-    };
     
-    // Сбрасываем ошибку при успешной загрузке
+    // Сбрасываем ошибку при успешной загрузке карты
     const handleMapReady = () => {
         setMapError(null); 
     };
-
+    
+    // Подробности маркера
     const showMarkerDetails = async (marker: CustomMarker) => {
-        // Навигация на страницу с деталями
         router.push({
             pathname: '/marker/[id]',
             params: { 
                 id: marker.id,
-                title: marker.title,
-                description: marker.description,
-                latitude: marker.coordinate.latitude.toString(),
-                longitude: marker.coordinate.longitude.toString(),
-                createdAt: marker.createdAt,
-                images: JSON.stringify(marker.images || [])
             }
-            
         });
-        console.log("Данные маркера переданы:", marker)
     }
 
     return (
         <View style={styles.container}>
             <Map
                 markers={markers}
-                addMarker={handleAddMarker}
-                deleteMarker={handleDeleteMarker}
+                addMarker={addMarker}
+                deleteMarker={deleteMarker}
                 showMarkerDetails={showMarkerDetails}
                 onMapReady={handleMapReady}
                 onError={setMapError}
             />
-            {mapError && ( // Отображение ошибки загрузки карты
+            {mapError && (
                 <View style={styles.errorContainer}>
                     <Text style={styles.errorText}>{mapError}</Text>
                 </View>

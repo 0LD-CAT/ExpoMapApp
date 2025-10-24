@@ -22,6 +22,7 @@ interface MapProps {
 
 export default function Map({ markers, addMarker, deleteMarker, showMarkerDetails, onError, onMapReady } : MapProps) {
     const [isMapReady, setIsMapReady] = useState(false);
+    
     // проверка загрузки карты
     useEffect(() => {
         const timeout = setTimeout(() => {

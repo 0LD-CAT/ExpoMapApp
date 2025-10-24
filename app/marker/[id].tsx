@@ -5,35 +5,34 @@ import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } fr
 
 import ImageList from '../../components/ImageList';
 import MarkerList from '../../components/MarkerList';
-import { CustomMarker, MarkerImage } from '../../types';
+import { useMarkers } from '../../contexts/MarkerContext';
 
 export default function MarkerDetailsScreen() {
   const params = useLocalSearchParams();
-  const [marker, setMarker] = useState<CustomMarker | null>(null);
-  const [images, setImages] = useState<MarkerImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const { markers, addImageToMarker, deleteImageFromMarker } = useMarkers();
 
-  // Восстанавливаем объект маркера из параметров только один раз
+  // Находим маркер в глобальном состоянии
+  const marker = markers.find(m => m.id === params.id);
+  
+  // Проверка на наличие маркера
   useEffect(() => {
-    if (params.id && !marker) {
-      const markerData: CustomMarker = {
-        id: params.id as string,
-        title: params.title as string,
-        description: params.description as string,
-        createdAt: params.createdAt as string,
-        coordinate: {
-          latitude: parseFloat(params.latitude as string),
-          longitude: parseFloat(params.longitude as string),
-        },
-        images: params.images ? JSON.parse(params.images as string) : []
-      };
-      setMarker(markerData);
-      setLoading(false);
+    if (params.id) {
+      if (marker) {
+        setLoading(false);
+      } else {
+        const timer = setTimeout(() => {
+          setLoading(false);
+        }, 3000); // через 3 секунды
+        return () => clearTimeout(timer);
+      }
     }
-  }, [params, marker]);
+  }, [params.id, marker]);
 
   // Добавление изображения
   const handleAddImage = async () => {
+    if (!marker) return;
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       allowsEditing: true,
@@ -42,36 +41,29 @@ export default function MarkerDetailsScreen() {
 
     if (!result.canceled) {
       try {
-          const imageUri = result.assets[0].uri;
-          // Создаем новый объект изображения
-          const newImage: MarkerImage = {
-            id: `img-${Date.now()}`,
-            marker_id: marker!.id,
-            uri: imageUri,
+        const imageUri = result.assets[0].uri;
+        const newImage = {
+          id: `img-${Date.now()}`,
+          marker_id: marker.id,
+          uri: imageUri,
         };
-        setMarker(prev => prev ? {
-          ...prev,
-          images: [...(prev.images || []), newImage]
-        } : null);
-
-        setImages(prev => [...prev, newImage]);
+        
+        // Обновляем в глобальном состоянии
+        addImageToMarker(marker.id, newImage);
       }
       catch (error) {
         Alert.alert('Ошибка', 'Не удалось добавить изображение');
         console.error('Ошибка при добавлении изображения:', error);
       }
     }
-    console.log("marker:", marker)
   };
 
   // Удаление изображения
   const handleDeleteImage = (imageId: string) => {
-    setMarker(prev => prev ? {
-      ...prev,
-      images: prev.images?.filter(img => img.id !== imageId) || []
-    } : null);
-
-    setImages(prev => prev.filter(img => img.id !== imageId));
+    if (!marker) return;
+    
+    // Обновляем только в глобальном состоянии
+    deleteImageFromMarker(marker.id, imageId);
   };
 
   if (loading) {
@@ -96,12 +88,9 @@ export default function MarkerDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      <MarkerList 
-        marker={marker} 
-      />
-
+      <MarkerList marker={marker} />
       <ImageList 
-        images={images}
+        images={marker.images || []}
         onAddImage={handleAddImage}
         onDeleteImage={handleDeleteImage}
       />
